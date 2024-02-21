@@ -6,11 +6,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import Shelves from './components/Shelves';
 import SearchButton from './components/SearchButton';
+import { useDebounce } from 'use-debounce';
 
 function App() {
   const [booksData, setBooksData] = useState([]);
   const [booksSearchData, setBooksSearchData] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [valueSearch] = useDebounce(searchQuery, 1000);
 
   const getAllBooksData = async () => {
     await BooksAPI.getAll().then((res) => {
@@ -19,10 +21,10 @@ function App() {
   };
 
   const handleUpdateShelf = (book, value) => {
-    BooksAPI.update(book, value);
-    setTimeout(() => {
-      getAllBooksData()
-    }, 200);
+    book.shelf = value;
+    BooksAPI.update(book, value).then(() => {
+      setBooksData([...booksData.filter((b) => b.id !== book.id), book]);
+    });
   };
 
   const handleSearchQuery = (e) => {
@@ -32,27 +34,39 @@ function App() {
 
   useEffect(() => {
     let isActive = true;
-    if (searchQuery) {
-      BooksAPI.search(searchQuery).then((data) => {
+    if (valueSearch) {
+      BooksAPI.search(valueSearch).then((data) => {
         if (data.error) {
           setBooksSearchData([]);
-        } else {
-          if (isActive) {
-            setBooksSearchData(data);
-          }
+        } else if (isActive) {
+          setBooksSearchData(data);
         }
       });
     }
+
     return () => {
       isActive = false;
       setBooksSearchData([]);
     };
-  }, [searchQuery]);
+  }, [valueSearch]);
+
+  const addShelfToBookSearchData = (bookSearchData, bookData) => {
+    bookSearchData.forEach((book) => {
+      const shelf = bookData.find((shelf) => shelf.id === book.id);
+      if (shelf) {
+        book.shelf = shelf.shelf;
+      } else {
+        book.shelf = 'none'
+      }
+    });
+  }
+
+  addShelfToBookSearchData(booksSearchData, booksData)
 
   useEffect(() => {
     getAllBooksData();
   }, []);
-
+  
   return (
     <div className='app'>
       <BrowserRouter>
@@ -75,10 +89,13 @@ function App() {
             element={
               <div className='list-books'>
                 <Header />
-                <Shelves booksData={booksData} handleUpdateShelf={handleUpdateShelf} />
+                <Shelves
+                  booksData={booksData}
+                  handleUpdateShelf={handleUpdateShelf}
+                />
                 <SearchButton />
               </div>
-              }
+            }
           />
         </Routes>
       </BrowserRouter>

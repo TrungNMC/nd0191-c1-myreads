@@ -1,23 +1,27 @@
 import { useNavigate } from 'react-router-dom';
-import { PropTypes } from "prop-types";
+import { PropTypes } from 'prop-types';
 const Search = ({
   handleSearchQuery,
   searchQuery,
   handleUpdateShelf,
   booksSearchData,
-  setSearchQuery
+  setSearchQuery,
 }) => {
   const noData = <div className='no_data'>there's no data to show </div>;
   const navigate = useNavigate();
   const handleBackClick = () => {
     navigate(-1); // Go back one step in history
-    setSearchQuery("")
+    setSearchQuery('');
   };
 
   return (
     <div className='search-books'>
       <div className='search-books-bar'>
-        <button style={{border: 'unset'}} className='close-search' onClick={() => handleBackClick()}>
+        <button
+          style={{ border: 'unset' }}
+          className='close-search'
+          onClick={() => handleBackClick()}
+        >
           Close
         </button>
         <div className='search-books-input-wrapper'>
@@ -32,7 +36,7 @@ const Search = ({
       <div className='search-books-results'>
         <ol className='books-grid'>
           {searchQuery ? (
-            booksSearchData.length > 0 ? (
+            booksSearchData?.length > 0 ? (
               <>
                 {booksSearchData?.map((book) => (
                   <li key={book.id}>
@@ -43,7 +47,9 @@ const Search = ({
                           style={{
                             width: 128,
                             height: 193,
-                            backgroundImage: `url(${book.imageLinks.thumbnail})`,
+                            backgroundImage: book.imageLinks?.thumbnail
+                              ? `url(${book.imageLinks?.thumbnail})`
+                              : "url('')",
                           }}
                         ></div>
                         <div className='book-shelf-changer'>
